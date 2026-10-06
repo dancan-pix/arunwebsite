@@ -1,0 +1,32 @@
+# Local run: copy .env.example to .env, fill in the Stripe keys, then
+#   docker compose up --build
+# and open http://localhost:8080
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: store
+      POSTGRES_PASSWORD: store
+      POSTGRES_DB: store
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://store:store@db:5432/store
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+
+volumes:
+  db-data:
